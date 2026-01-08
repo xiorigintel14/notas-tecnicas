@@ -107,11 +107,11 @@
     </div>
 
     <label>CLIENTE</label>
-    <input type="text" id="cliente" placeholder="Nombre completo del cliente">
+    <input type="text" id="cliente" placeholder="Nombre completo">
     
 
     <div class="row-fixed">
-        <div class="col"><label>PERSONA QUE ATIENDE</label><input type="text" id="patiende" placeholder="Nombre completo del cliente"></div>
+        <div class="col"><label>PERSONA QUE ATIENDE</label><input type="text" id="patiende" placeholder="Nombre completo"></div>
         <div class="col"><label>Celular</label><input type="tel" id="cel"></div>
     </div>
 
@@ -235,7 +235,7 @@
     <button onclick="borrarTodo()" style="width:100%; padding:15px; margin-top:30px; background:#ef5350; border:none; color:white; border-radius:8px; font-weight:bold; font-size:14px; text-transform:uppercase;">🗑️ Borrar Todo y Empezar</button>
 
     <div class="btn-container">
-        <button class="action btn-1" onclick="generar(1)">1. WSP</button>
+        <button class="action btn-1" onclick="generar(1)">1. MIGRACION</button>
         <button class="action btn-2" onclick="generar(2)">2. FULL</button>
         <button class="action btn-3" onclick="generar(3)">3. OBS</button>
         <button class="action btn-2" onclick="enviarAGoogleSheets()">📤 Enviar a Sheets</button>
@@ -243,34 +243,91 @@
 
     <script>
 
-        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbywu_VJk0gTJFYqvvt1Vv8-Pq3WFniYQ0S3biVW6FLTEs7wadFacGF8_2wra1jzfqjm/exec";
+        window.addEventListener('online', () => {
+    let pendientes = JSON.parse(localStorage.getItem('enviosPendientes') || "[]");
+    if (pendientes.length === 0) return;
 
-        function enviarAGoogleSheets() {
-
-        const datos = {
-            tipoNota: document.getElementById("tipoNota").value,
-            cto: document.getElementById("cto").value,
-            cta: document.getElementById("cta").value,
-            cliente: document.getElementById("cliente").value,
-            tec: document.getElementById("tec").value,
-            nap: document.getElementById("nap").value,
-            coordNap: document.getElementById("coords").value,
-            coordCasa: document.getElementById("coordscas").value,
-            obs: document.getElementById("obsInput").value
-        };
-
+    pendientes.forEach(d => {
         fetch(GOOGLE_SHEETS_URL, {
             method: "POST",
             mode: "no-cors",
-            body: JSON.stringify(datos)
-        })
-        .then(() => {
-            alert("✅ Datos enviados correctamente a Google Sheets");
-        })
-        .catch(() => {
-            alert("❌ Error al enviar datos");
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(d)
         });
-        }
+    });
+
+    localStorage.removeItem('enviosPendientes');
+    alert("📡 Datos pendientes enviados automáticamente");
+});
+
+
+       function obtenerDatosFormulario() {
+    return {
+        fecha: new Date().toLocaleString(),
+
+        tipoNota: document.getElementById('tipoNota').value,
+        numTarea: document.getElementById('numTarea').value,
+
+        cto: document.getElementById('cto').value,
+        cta: document.getElementById('cta').value,
+        cliente: document.getElementById('cliente').value,
+        personaAtiende: document.getElementById('patiende').value,
+        celular: document.getElementById('cel').value,
+        tec: document.getElementById('tec').value,
+
+        nap: document.getElementById('nap').value,
+        coordNAP: document.getElementById('coords').value,
+        coordCasa: document.getElementById('coordscas').value,
+
+        problema: document.getElementById('problema').value,
+        solucion: document.getElementById('solucion').value,
+
+        fibraTotal: document.getElementById('fTot').value,
+        utpTotal: document.getElementById('uTot').value,
+        rg6Total: document.getElementById('rTot').value,
+
+        ssid: document.getElementById('ssid').value,
+        pass: document.getElementById('pass').value,
+
+        equiposQuedan: readDynamic('container-quedan'),
+        equiposRetiran: readDynamic('container-salientes'),
+        materiales: readDynamic('container-materiales')
+    };
+}
+
+        const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzOASlbv-kxIv2Ko6Jbu3hJ9MigM7JrMUQ4WUElJL7Vu8wLkxoCQKb-a-mUHE_ofC5Cnw/exec";
+
+        function enviarAGoogleSheets() {
+
+    const datos = obtenerDatosFormulario();
+
+    if (!navigator.onLine) {
+        guardarOffline(datos);
+        return;
+    }
+
+    fetch(GOOGLE_SHEETS_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(datos)
+    })
+    .then(() => {
+        alert("✅ Datos enviados correctamente");
+    })
+    .catch(() => {
+        guardarOffline(datos);
+    });
+}
+
+function guardarOffline(datos) {
+    let pendientes = JSON.parse(localStorage.getItem('enviosPendientes') || "[]");
+    pendientes.push(datos);
+    localStorage.setItem('enviosPendientes', JSON.stringify(pendientes));
+    alert("📴 Sin internet. Datos guardados y se enviarán luego.");
+}
 
 
 
@@ -278,7 +335,7 @@
         document.addEventListener('input', function(e) { saveData(); });
 
         function saveData() {
-            const inputs = document.querySelectorAll('input[id], textarea[id]');
+            const inputs = document.querySelectorAll('input[id], textarea[id], select[id]');
             inputs.forEach(el => localStorage.setItem(el.id, el.value));
             saveDynamicSection('container-quedan');
             saveDynamicSection('container-salientes');
@@ -302,7 +359,7 @@
 
         function loadData() {
             if (localStorage.getItem('migra_saved') === 'true') {
-                const inputs = document.querySelectorAll('input[id], textarea[id]');
+                const inputs = document.querySelectorAll('input[id], textarea[id], select[id]');
                 inputs.forEach(el => {
                     const val = localStorage.getItem(el.id);
                     if (val !== null) el.value = val;
@@ -367,15 +424,22 @@
 }
 
         function addRow(containerId, phName, phDesc) {
-            const div = document.createElement('div');
-            div.className = 'dynamic-row';
-            div.innerHTML = `
-                <input type="text" class="name" placeholder="Tipo" value="${phName}">
-                <input type="text" class="desc" placeholder="Detalle" value="${phDesc}">
-                <button class="btn-del" onclick="removeRow(this)">X</button>
-            `;
-            document.getElementById(containerId).appendChild(div);
-        }
+    const div = document.createElement('div');
+    div.className = 'dynamic-row';
+
+    div.innerHTML = `
+        <input type="text" class="name" placeholder="Tipo" value="${phName}">
+        <input type="text" class="desc" placeholder="Detalle" value="${phDesc}">
+        <button class="btn-del" onclick="removeRow(this)">X</button>
+    `;
+
+    div.querySelectorAll('input').forEach(i => {
+        i.addEventListener('input', saveData);
+    });
+
+    document.getElementById(containerId).appendChild(div);
+}
+
 
         function removeRow(btn) {
             btn.parentElement.remove();
@@ -431,10 +495,11 @@
         function generar(tipo) {
             let d = {
                 nta: document.getElementById('tipoNota').value,
-                ntr: document.getElementById(`numTarea`).value,
+                ntr: document.getElementById('numTarea').value,
                 cto: document.getElementById('cto').value,
                 cta: document.getElementById('cta').value,
                 cli: document.getElementById('cliente').value.toUpperCase(),
+                pea: document.getElementById('patiende').value.toUpperCase(),
                 tec: document.getElementById('tec').value.toUpperCase(),
                 nap: document.getElementById('nap').value.toUpperCase(),
                 coo: document.getElementById('coords').value,
@@ -475,7 +540,7 @@
             let l_sal = readDynamic('container-salientes');
             let l_nue = readDynamic('container-quedan');
             let l_mat = readDynamic('container-materiales');
-            let obs_auto = `Se realiza ${d.nta}.\nLa DROP va por ${d.ins} .`;
+            let obs_auto = `Se realiza ${d.nta}.\n El cable va por ${d.ins} .`;
             let txt = "";
 
             if(tipo === 1) { // WSP
@@ -488,12 +553,13 @@
                 `*CTO:* ${d.cto}\n`+
                 `*CTA:* ${d.cta}\n`+
                 `*CLIENTE:* ${d.cli}\n`+
+                `*PERSONA QUE ATIENDE:* ${d.pea}\n`+
                 `*CELULAR:* ${d.cel}\n`+
                 `*PREDIO:* ${d.pre}\n`+
                 `*COORDENADAS CASA:* ${d.cdc}\n`+
                 `*NAP:* ${d.nap}\n`+
-                `*COORDENADAS NAP:* ${d.coo}\n`+
-                `*NIVELES*\n*NAP:* ${d.nna}\n`+
+                `*COORDENADAS NAP/TAP:* ${d.coo}\n`+
+                `*NIVELES*\n*NAP/TAP:* ${d.nna}\n`+
                 `*ONT:* ${d.non}\n\n*DESCRIPCION*\n`+
                 `*ANTECEDENTES:* ${d.ant}\n`+
                 `*PROBLEMA:* ${d.prob}\n`+
@@ -522,14 +588,14 @@
                 `*NIVELES ANALYZER*\n`+
                 `* *DORMITORIO:* ${d.an1}\n`+
                 `* *SALA:* ${d.an2}\n`+
-                `* *Local:* ${d.an3}\n\n`+
+                `* *LOCAL:* ${d.an3}\n\n`+
                 `*EQUIPOS QUEDAN*\n${l_nue}\n\n`+
                 `*DISPOSITIVOS CONECTADOS*\n`+
-                `* *Wifi:* ${d.dwi}\n`+
+                `* *WIFI:* ${d.dwi}\n`+
                 `* *CABLE:* ${d.dca}\n\n`+
                 `*UBICACION DE EQUIPOS TERMINALES*\n`+
                 `* *ONT:* ${d.ubio}\n`+
-                `* *Router:* ${d.ubir}\n\n`+
+                `* *ROUTER:* ${d.ubir}\n\n`+
                 `*EQUIPOS RETIRADOS*\n${l_sal}\n\n`+
                 `*MATERIALES*\n`+
                 `* *FO DROP:* ${d.ftot}\n`+
@@ -544,9 +610,9 @@
                       `CTO:${d.cto}\n`+
                       `CTA: ${d.cta}\n`+
                       `CLIENTE: ${d.cli}\n\n`+
-                      `NAP: ${d.nap}\n` +
+                      `NAP/TAP: ${d.nap}\n` +
                       `Niveles\n`+
-                      `NAP (Nivel de Nap): ${d.nna}\n` +
+                      `NAP (Nivel de NAP/TAP): ${d.nna}\n` +
                       `ONT (Nivel ONT): ${d.non}\n\n` +
                       `COORDENADAS\n` +
                       `COORDENADAS CASA: ${d.cdc}\n`+
@@ -560,6 +626,11 @@
             }
             copiar(txt);
         }
+        if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.register("sw.js")
+        .then(() => console.log("Service Worker registrado"))
+        .catch(err => console.log("Error SW:", err));
+}
     </script>
 </body>
 </html>
