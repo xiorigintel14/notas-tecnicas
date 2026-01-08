@@ -116,7 +116,7 @@
     </div>
 
     <label>TEC</label>
-    <input type="text" id="tec" value="ORINGITEL #">
+    <input type="text" id="tec" placeholder="ORICUE#">
 
     <div class="row-fixed">
         <div class="col"><label>NAP</label><input type="text" id="nap" placeholder="CJA-..."></div>
@@ -491,8 +491,30 @@ function guardarOffline(datos) {
             }
             document.body.removeChild(el);
         }
-      
+    
+    function validarCamposObligatorios() {
+    const tipoNota = document.getElementById('tipoNota');
+    const tec = document.getElementById('tec');
+
+    // Validar tipo de nota
+    if (!tipoNota.value) {
+        alert("⚠️ Debe seleccionar el TIPO DE NOTA");
+        tipoNota.focus();
+        return false;
+    }
+
+    // Validar TEC
+    if (!tec.value.trim()) {
+        alert("⚠️ Debe ingresar el código TEC");
+        tec.focus();
+        return false;
+    }
+
+    return true;
+}
+
         function generar(tipo) {
+            if (!validarCamposObligatorios()) return;
             let d = {
                 nta: document.getElementById('tipoNota').value,
                 ntr: document.getElementById('numTarea').value,
