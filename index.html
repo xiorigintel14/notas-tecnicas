@@ -165,11 +165,11 @@
     <input type="text" id="solucion" placeholder="Detallar solución del problema">
     
     <div class="row-fixed" style="margin-top:15px;">
-        <div class="col"><label>Nivel NAP</label><input type="text" id="nNap" value="-"></div>
+        <div class="col"><label>Nivel NAP/TAP</label><input type="text" id="nNap" value="-"></div>
         <div class="col"><label>Nivel ONT</label><input type="text" id="nOnt" value="-"></div>
     </div>
 
-    <label>Ubicación de ONT</label>
+    <label>Ubicación de ONT/MTA/DECO</label>
     <input type="text" id="ubiont" placeholder="ONT">
     <label>Ubicación de Router</label>
     <input type="text" id="ubirou" placeholder="Router">
@@ -236,9 +236,9 @@
 
     <div class="btn-container">
         <button class="action btn-1" onclick="generar(1)">1. MIGRACION</button>
-        <button class="action btn-2" onclick="generar(2)">2. FULL</button>
+        <button class="action btn-2" onclick="generar(2)">2. 📤ENVIA Y FULL</button>
         <button class="action btn-3" onclick="generar(3)">3. OBS</button>
-        <button class="action btn-2" onclick="enviarAGoogleSheets()">📤 Enviar a Sheets</button>
+       <!-- <button class="action btn-2" onclick="enviarAGoogleSheets()">📤 Enviar a Sheets</button> -->
     </div>
 
     <script>
@@ -626,6 +626,7 @@ function guardarOffline(datos) {
                 `*GESTIÓN DE CALIDAD*\n`+
                 `* *¿Con cuanto califica usted la experiencia recibida con el trabajo del grupo técnico?* ${d.C1}\n`+
                 `* *¿De acuerdo a esta experiencia, usted recomendaría nuestro servicio y trabajo?* ${d.C2}\n`;
+                enviarAGoogleSheets();
             } 
             else if(tipo === 3) { // OBS
                 txt = 
@@ -649,7 +650,7 @@ function guardarOffline(datos) {
             copiar(txt);
         }
         if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw.js")
+        navigator.serviceWorker.register("sw-v1.js")
         .then(() => console.log("Service Worker registrado"))
         .catch(err => console.log("Error SW:", err));
 }
