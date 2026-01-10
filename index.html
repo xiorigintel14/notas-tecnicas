@@ -231,13 +231,13 @@
 
     <h3 style="color:#ffcc80; border-color:#ffcc80;">👁️ OBSERVACIONES ADICIONALES</h3>
     <textarea id="obsInput" rows="3" placeholder="Escribe aquí notas adicionales..."></textarea>
-    
     <button onclick="borrarTodo()" style="width:100%; padding:15px; margin-top:30px; background:#ef5350; border:none; color:white; border-radius:8px; font-weight:bold; font-size:14px; text-transform:uppercase;">🗑️ Borrar Todo y Empezar</button>
 
     <div class="btn-container">
         <button class="action btn-1" onclick="generar(1)">1. MIGRACION</button>
         <button class="action btn-2" onclick="generar(2)">2. 📤ENVIA Y FULL</button>
         <button class="action btn-3" onclick="generar(3)">3. OBS</button>
+
        <!-- <button class="action btn-2" onclick="enviarAGoogleSheets()">📤 Enviar a Sheets</button> -->
     </div>
 
@@ -655,5 +655,38 @@ function guardarOffline(datos) {
         .catch(err => console.log("Error SW:", err));
 }
     </script>
+
+    <script>
+async function borrarTodo() {
+  if (!confirm("Esto borrará todos los datos, cache y Service Worker. ¿Desea continuar?")) {
+    return;
+  }
+
+  // 🔥 BORRAR DATOS
+  localStorage.clear();
+  sessionStorage.clear();
+
+  // 🔥 BORRAR CACHE
+  if ('caches' in window) {
+    const cacheNames = await caches.keys();
+    for (let name of cacheNames) {
+      await caches.delete(name);
+    }
+  }
+
+  // 🔥 BORRAR SERVICE WORKERS
+  if ('serviceWorker' in navigator) {
+    const registros = await navigator.serviceWorker.getRegistrations();
+    for (let registro of registros) {
+      await registro.unregister();
+    }
+  }
+
+  alert("Todo eliminado. La aplicación se reiniciará.");
+  location.reload(true);
+}
+</script>
+
+
 </body>
 </html>
