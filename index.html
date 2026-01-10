@@ -650,7 +650,7 @@ function guardarOffline(datos) {
             copiar(txt);
         }
         if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("sw-v1.js")
+        navigator.serviceWorker.register("sw-v2.js")
         .then(() => console.log("Service Worker registrado"))
         .catch(err => console.log("Error SW:", err));
 }
