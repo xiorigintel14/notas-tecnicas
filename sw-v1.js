@@ -1,4 +1,4 @@
-const CACHE_NAME = "notas-v1";
+const CACHE_NAME = "notas-v2";
 
 const FILES = [
   "./",
@@ -19,3 +19,4 @@ self.addEventListener("fetch", event => {
     })
   );
 });
+
