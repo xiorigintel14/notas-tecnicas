@@ -454,16 +454,26 @@ function guardarOffline(datos) {
             saveData();
         }
 
-        function readDynamic(containerId) {
-            let items = [];
-            document.querySelectorAll(`#${containerId} .dynamic-row`).forEach(row => {
-                let n = row.querySelector('.name').value;
-                let v = row.querySelector('.desc').value;
-                if(n && v) items.push(`* *${n}:* ${v}`);
-                else if(n) items.push(`* *${n}*`);
-            });
-            return items.join('\n');
+ function readDynamic(containerId) {
+    let items = [];
+
+    document.querySelectorAll(`#${containerId} .dynamic-row`).forEach(row => {
+        let n = row.querySelector('.name').value.trim();
+        let v = row.querySelector('.desc').value.trim();
+
+        // 🔥 Elimina cualquier ":" que el usuario haya escrito
+        n = n.replace(/:+$/, '');
+
+        if (n && v) {
+            items.push(`${n}: ${v}`);
+        } else if (n) {
+            items.push(`${n}`);
         }
+    });
+
+    return items.join(' ');
+    }
+
 
         function calc() {
             let f = Math.abs((document.getElementById('fIni').value||0) - (document.getElementById('fFin').value||0));
