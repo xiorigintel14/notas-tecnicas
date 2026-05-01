@@ -461,7 +461,6 @@ function guardarOffline(datos) {
         let n = row.querySelector('.name').value.trim();
         let v = row.querySelector('.desc').value.trim();
 
-        // 🔥 Elimina cualquier ":" que el usuario haya escrito
         n = n.replace(/:+$/, '');
 
         if (n && v) {
@@ -471,8 +470,8 @@ function guardarOffline(datos) {
         }
     });
 
-    return items.join(' ');
-    }
+    return items.join('\n');
+}
 
 
         function calc() {
