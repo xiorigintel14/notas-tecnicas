@@ -179,7 +179,26 @@
         <div class="col"><label>Disp. Cable</label><input type="number" id="dCable" value="0"></div>
     </div>
 
-    <h3>📏 Metrajes</h3>
+   
+    <h3>📶 Info Técnica / Analyzer</h3>
+    <p style="margin:0; font-size:10px; color:#aaa; margin-bottom:5px;">*wifi monitor_.</p>
+    <div class="row-fixed">
+        <div class="col"><label>Cód. Inicial</label><input type="text" id="codIni"></div>
+        <div class="col"><label>Cód. Final</label><input type="text" id="codFin"></div>
+    </div>
+    <div class="row-fixed">
+        <div class="col"><label>Red (SSID)</label><input type="text" id="ssid" value="Xtrim_"></div>
+        <div class="col"><label>Pass</label><input type="text" id="pass"></div>
+    </div>
+
+    <label>ANALYZER (Niveles)</label>
+    <div class="row-fixed">
+        <div class="col"><input type="text" id="an1" placeholder="Dorm"></div>
+        <div class="col"><input type="text" id="an2" placeholder="Sala"></div>
+        <div class="col"><input type="text" id="an3" placeholder="Local"></div>
+    </div>
+    
+     <h3>📏 Metrajes</h3>
     <label>FIBRA ÓPTICA</label>
     <div class="row-fixed">
         <div class="col"><input type="number" id="fIni" placeholder="Ini" oninput="calc()"></div>
@@ -198,23 +217,6 @@
         <div class="col"><input type="number" id="rIni" placeholder="Ini" oninput="calc()"></div>
         <div class="col"><input type="number" id="rFin" placeholder="Fin" oninput="calc()"></div>
         <div class="col"><input type="text" id="rTot" placeholder="Tot" readonly class="total-display"></div>
-    </div>
-    <h3>📶 Info Técnica / Analyzer</h3>
-    <p style="margin:0; font-size:10px; color:#aaa; margin-bottom:5px;">*wifi monitor_.</p>
-    <div class="row-fixed">
-        <div class="col"><label>Cód. Inicial</label><input type="text" id="codIni"></div>
-        <div class="col"><label>Cód. Final</label><input type="text" id="codFin"></div>
-    </div>
-    <div class="row-fixed">
-        <div class="col"><label>Red (SSID)</label><input type="text" id="ssid" value="Xtrim_"></div>
-        <div class="col"><label>Pass</label><input type="text" id="pass"></div>
-    </div>
-
-    <label>ANALYZER (Niveles)</label>
-    <div class="row-fixed">
-        <div class="col"><input type="text" id="an1" placeholder="Dorm"></div>
-        <div class="col"><input type="text" id="an2" placeholder="Sala"></div>
-        <div class="col"><input type="text" id="an3" placeholder="Local"></div>
     </div>
 
     <h3>🛠️ Materiales</h3>
@@ -464,9 +466,9 @@ function guardarOffline(datos) {
         n = n.replace(/:+$/, '');
 
         if (n && v) {
-            items.push(`${n}: ${v}`);
+            items.push(`• *${n}:* ${v}`);
         } else if (n) {
-            items.push(`${n}`);
+            items.push(`• ${n}`);
         }
     });
 
