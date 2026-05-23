@@ -240,12 +240,37 @@
     <button onclick="borrarTodo()" style="width:100%; padding:15px; margin-top:30px; background:#ef5350; border:none; color:white; border-radius:8px; font-weight:bold; font-size:14px; text-transform:uppercase;">🗑️ Borrar Todo y Empezar</button>
 
     <div class="btn-container">
-        <button class="action btn-1" onclick="generar(1)">1. MIGRACION</button>
-        <button class="action btn-2" onclick="generar(2)">2. 📤ENVIA Y FULL</button>
-        <button class="action btn-3" onclick="generar(3)">3. OBS</button>
 
-       <!-- <button class="action btn-2" onclick="enviarAGoogleSheets()">📤 Enviar a Sheets</button> -->
-    </div>
+    <button class="action btn-1" onclick="generar(1)">
+        1. MIGRACION
+    </button>
+
+    <button class="action btn-2" onclick="generar(2)">
+        2. 📤ENVIA Y FULL
+    </button>
+
+    <button class="action btn-3" onclick="generar(3)">
+        3. OBS
+    </button>
+
+    <button class="action btn-1" onclick="exportarDatos()">
+        📤 EXPORTAR
+    </button>
+
+    <button class="action btn-2"
+        onclick="document.getElementById('importFile').click()">
+        📥 IMPORTAR
+    </button>
+
+    <input
+        type="file"
+        id="importFile"
+        hidden
+        accept=".json"
+        onchange="importarDatos(event)"
+    >
+
+</div>
 
     <script>
 
@@ -721,6 +746,110 @@ function guardarOffline(datos) {
   });
 
 }
+    // ===============================
+// EXPORTAR DATOS
+// ===============================
+function exportarDatos() {
+
+    const datos = {};
+
+    // Guardar todos los inputs
+    document.querySelectorAll(
+        'input[id], textarea[id], select[id]'
+    ).forEach(el => {
+
+        datos[el.id] = el.value;
+    });
+
+    // Guardar secciones dinámicas
+    datos["container-quedan"] =
+        localStorage.getItem("container-quedan");
+
+    datos["container-salientes"] =
+        localStorage.getItem("container-salientes");
+
+    datos["container-materiales"] =
+        localStorage.getItem("container-materiales");
+
+    // Crear archivo JSON
+    const blob = new Blob(
+        [JSON.stringify(datos, null, 2)],
+        {
+            type: "application/json"
+        }
+    );
+
+    // Crear descarga
+    const a = document.createElement("a");
+
+    a.href = URL.createObjectURL(blob);
+
+    a.download =
+        `nota_${Date.now()}.json`;
+
+    a.click();
+
+    alert("✅ Archivo exportado");
+}
+
+
+// ===============================
+// IMPORTAR DATOS
+// ===============================
+function importarDatos(event) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function(e) {
+
+        const datos =
+            JSON.parse(e.target.result);
+
+        // Restaurar inputs
+        Object.keys(datos).forEach(key => {
+
+            const el =
+                document.getElementById(key);
+
+            if (el) {
+
+                el.value = datos[key];
+
+                localStorage.setItem(
+                    key,
+                    datos[key]
+                );
+            }
+        });
+
+        // Restaurar dinámicos
+        [
+            "container-quedan",
+            "container-salientes",
+            "container-materiales"
+        ].forEach(id => {
+
+            if (datos[id]) {
+
+                localStorage.setItem(
+                    id,
+                    datos[id]
+                );
+            }
+        });
+
+        alert("✅ Datos importados");
+
+        location.reload();
+    };
+
+    reader.readAsText(file);
+}
+
     </script>
 
     <script>
