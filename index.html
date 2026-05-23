@@ -51,7 +51,49 @@
         .gps-group { display: flex; gap: 5px; }
         .btn-gps { background: #03dac6; border: none; border-radius: 8px; width: 50px; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center;}
         
-        #save-status { text-align: right; font-size: 11px; color: #03dac6; margin-top: -10px; margin-bottom: 15px; font-style: italic; min-height: 15px;}
+#save-status {
+    text-align: right;
+    font-size: 11px;
+    color: #03dac6;
+    margin-top: -10px;
+    margin-bottom: 15px;
+    font-style: italic;
+    min-height: 15px;
+}
+
+/* =========================
+BOTONES FLOTANTES
+========================= */
+
+.float-buttons{
+    position: fixed;
+    top: 15px;
+    right: 15px;
+
+    display: flex;
+    flex-direction: column;
+
+    gap: 10px;
+
+    z-index: 9999;
+}
+
+.float-btn{
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(5px);
+    color: white;
+    font-size: 20px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+}
+
+.float-btn:active{
+    transform: scale(0.95);
+}
 
         /* --- REGLA DE ORO PARA MÓVILES PEQUEÑOS --- */
         @media (max-width: 360px) {
@@ -253,22 +295,35 @@
         3. OBS
     </button>
 
-    <button class="action btn-1" onclick="exportarDatos()">
-        📤 EXPORTAR
-    </button>
-
-    <button class="action btn-2"
-        onclick="document.getElementById('importFile').click()">
-        📥 IMPORTAR
-    </button>
-
-    <input
+</div>
+ <input
         type="file"
         id="importFile"
         hidden
         accept=".json"
         onchange="importarDatos(event)"
     >
+
+    <div class="float-buttons">
+
+    <button
+        class="float-btn"
+        onclick="exportarDatos()"
+        title="Exportar">
+
+        📤
+
+    </button>
+
+    <button
+        class="float-btn"
+        onclick="document.getElementById('importFile').click()"
+        title="Importar">
+
+        📥
+
+    </button>
+
 
 </div>
 
