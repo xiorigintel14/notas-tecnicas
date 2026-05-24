@@ -954,73 +954,104 @@ async function borrarTodo() {
 // URL WEB APP
 // ===============================
 const SYNC_URL =
-"https://xiorigintel14.github.io/notas-tecnicas/";
+location.origin + location.pathname;
 
 // ===============================
 // SUBIR SINCRONIZACIÓN REAL
 // ===============================
 async function subirSync() {
 
-    const datos = {};
+    try {
 
-    document.querySelectorAll(
-        'input[id], textarea[id], select[id]'
-    ).forEach(el => {
+        const datos = {};
 
-        datos[el.id] = el.value;
-    });
+        document.querySelectorAll(
+            'input[id], textarea[id], select[id]'
+        ).forEach(el => {
 
-    datos["container-quedan"] =
-        localStorage.getItem("container-quedan");
+            datos[el.id] = el.value;
+        });
 
-    datos["container-salientes"] =
-        localStorage.getItem("container-salientes");
+        datos["container-quedan"] =
+            localStorage.getItem("container-quedan");
 
-    datos["container-materiales"] =
-        localStorage.getItem("container-materiales");
+        datos["container-salientes"] =
+            localStorage.getItem("container-salientes");
 
-    // GUARDAR EN GIST
-    const response = await fetch(
-        "https://api.github.com/gists",
-        {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                public: false,
-                files: {
-                    "datos.json": {
-                        content: JSON.stringify(datos)
+        datos["container-materiales"] =
+            localStorage.getItem("container-materiales");
+
+        // CREAR GIST
+        const response = await fetch(
+            "https://api.github.com/gists",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Accept": "application/vnd.github+json"
+                },
+                body: JSON.stringify({
+                    description: "Sync notas",
+                    public: false,
+                    files: {
+                        "datos.json": {
+                            content: JSON.stringify(datos)
+                        }
                     }
-                }
-            })
-        }
-    );
-
-    const gist = await response.json();
-
-    // URL QR
-    const url =
-        SYNC_URL + "?gist=" + gist.id;
-
-    // Mostrar QR
-    document.getElementById(
-        "qrBox"
-    ).style.display = "block";
-
-    const canvas =
-        document.getElementById(
-            "qrCanvas"
+                })
+            }
         );
 
-    QRCode.toCanvas(
-        canvas,
-        url,
-        {
-            width: 220
+        // VALIDAR
+        if (!response.ok) {
+
+            const error = await response.text();
+
+            console.error(error);
+
+            alert("❌ GitHub bloqueó la sincronización");
+
+            return;
         }
-    );
+
+        const gist = await response.json();
+
+        if (!gist.id) {
+
+            alert("❌ No se pudo crear GIST");
+
+            return;
+        }
+
+        // URL FINAL
+        const url =
+            SYNC_URL + "?gist=" + gist.id;
+
+        // MOSTRAR QR
+        document.getElementById("qrBox")
+            .style.display = "block";
+
+        const canvas =
+            document.getElementById("qrCanvas");
+
+        canvas.innerHTML = "";
+
+        QRCode.toCanvas(
+            canvas,
+            url,
+            {
+                width: 240
+            }
+        );
+
+        alert("✅ QR generado");
+
+    } catch(err) {
+
+        console.error(err);
+
+        alert("❌ Error creando sincronización");
+    }
 }
 
 // ===============================
