@@ -957,7 +957,7 @@ const SYNC_URL =
 "https://xiorigintel14.github.io/notas-tecnicas/";
 
 // ===============================
-// SUBIR SINCRONIZACIÓN
+// SUBIR SINCRONIZACIÓN REAL
 // ===============================
 async function subirSync() {
 
@@ -979,47 +979,46 @@ async function subirSync() {
     datos["container-materiales"] =
         localStorage.getItem("container-materiales");
 
-    // ID único
-    const id =
-        Math.random()
-        .toString(36)
-        .substring(2,10);
-
-    // Guardar
-    localStorage.setItem(
-        "sync_" + id,
-        JSON.stringify(datos)
+    // GUARDAR EN GIST
+    const response = await fetch(
+        "https://api.github.com/gists",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                public: false,
+                files: {
+                    "datos.json": {
+                        content: JSON.stringify(datos)
+                    }
+                }
+            })
+        }
     );
 
-    // Crear URL
-    const url =
-        SYNC_URL + "?sync=" + id;
+    const gist = await response.json();
 
-    // Mostrar ventana QR
+    // URL QR
+    const url =
+        SYNC_URL + "?gist=" + gist.id;
+
+    // Mostrar QR
     document.getElementById(
         "qrBox"
     ).style.display = "block";
 
-    // Canvas
     const canvas =
         document.getElementById(
             "qrCanvas"
         );
 
-    // Generar QR
     QRCode.toCanvas(
         canvas,
         url,
         {
             width: 220
-        },
-        function(error) {
-
-            if (error) {
-                console.error(error);
-                alert("Error generando QR");
-            }
-
         }
     );
 }
@@ -1035,81 +1034,86 @@ function cerrarQR() {
 }
 
 // ===============================
-// IMPORTAR SYNC
+// IMPORTAR DESDE GIST
 // ===============================
-function importarSync() {
+async function importarSync() {
 
     const params =
         new URLSearchParams(
             location.search
         );
 
-    const id =
-        params.get("sync");
+    const gistId =
+        params.get("gist");
 
-    if (!id) return;
+    if (!gistId) return;
 
-    const datos =
-        localStorage.getItem(
-            "sync_" + id
+    try {
+
+        const response = await fetch(
+            "https://api.github.com/gists/" + gistId
         );
 
-    if (!datos) {
+        const gist =
+            await response.json();
+
+        const contenido =
+            gist.files["datos.json"].content;
+
+        const json =
+            JSON.parse(contenido);
+
+        Object.keys(json)
+        .forEach(key => {
+
+            const el =
+                document.getElementById(key);
+
+            if (el) {
+
+                el.value =
+                    json[key];
+
+                localStorage.setItem(
+                    key,
+                    json[key]
+                );
+            }
+        });
+
+        [
+            "container-quedan",
+            "container-salientes",
+            "container-materiales"
+        ].forEach(id => {
+
+            if (json[id]) {
+
+                localStorage.setItem(
+                    id,
+                    json[id]
+                );
+            }
+        });
+
+        alert("✅ Datos sincronizados");
+
+        location.href =
+            location.pathname;
+
+        location.reload();
+
+    } catch(err) {
+
+        console.error(err);
 
         alert(
-            "No existen datos"
+            "Error importando datos"
         );
-
-        return;
     }
-
-    const json =
-        JSON.parse(datos);
-
-    Object.keys(json)
-    .forEach(key => {
-
-        const el =
-            document.getElementById(
-                key
-            );
-
-        if (el) {
-
-            el.value =
-                json[key];
-
-            localStorage.setItem(
-                key,
-                json[key]
-            );
-        }
-    });
-
-    [
-        "container-quedan",
-        "container-salientes",
-        "container-materiales"
-    ].forEach(id => {
-
-        if (json[id]) {
-
-            localStorage.setItem(
-                id,
-                json[id]
-            );
-        }
-    });
-
-    alert("✅ Datos sincronizados");
-
-    location.href =
-        location.pathname;
-
-    location.reload();
 }
 
-// Ejecutar automático
+// Ejecutar
 importarSync();
 
 </script>
