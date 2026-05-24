@@ -996,15 +996,18 @@ async function subirSync() {
 
         const json = JSON.parse(text);
 
-        if (!json.url) {
-            throw new Error("No se recibió URL");
+        if (!json.id) {
+
+            throw new Error(
+                "No se recibió ID"
+            );
         }
 
         const url =
-    location.origin +
-    location.pathname +
-    "?id=" +
-    encodeURIComponent(json.id);
+            location.origin +
+            location.pathname +
+            "?id=" +
+            encodeURIComponent(json.id);
 
         document.getElementById(
             "qrBox"
