@@ -1001,10 +1001,10 @@ async function subirSync() {
         }
 
         const url =
-            location.origin +
-            location.pathname +
-            "?file=" +
-            encodeURIComponent(json.url);
+    location.origin +
+    location.pathname +
+    "?id=" +
+    encodeURIComponent(json.id);
 
         document.getElementById(
             "qrBox"
@@ -1038,9 +1038,7 @@ function cerrarQR() {
     ).style.display = "none";
 }
 
-// ===============================
-// IMPORTAR DESDE GIST
-// ===============================
+
 // ===============================
 // IMPORTAR DESDE GOOGLE DRIVE
 // ===============================
@@ -1051,21 +1049,21 @@ async function importarSync() {
             location.search
         );
 
-    const fileUrl =
-        params.get("file");
+    const id =
+        params.get("id");
 
-    if (!fileUrl) return;
+    if (!id) return;
 
     try {
 
-        // descargar json
         const response =
-            await fetch(fileUrl);
+            await fetch(
+                DRIVE_API + "?id=" + id
+            );
 
         const json =
             await response.json();
 
-        // restaurar inputs
         Object.keys(json)
         .forEach(key => {
 
@@ -1084,7 +1082,6 @@ async function importarSync() {
             }
         });
 
-        // restaurar dinámicos
         [
             "container-quedan",
             "container-salientes",
@@ -1104,7 +1101,6 @@ async function importarSync() {
             "✅ Datos sincronizados"
         );
 
-        // limpiar url
         history.replaceState(
             {},
             "",
