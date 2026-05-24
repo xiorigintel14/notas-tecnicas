@@ -960,12 +960,13 @@ location.origin + location.pathname;
 // SUBIR SINCRONIZACIÓN REAL
 // ===============================
 const DRIVE_API =
-"https://script.google.com/macros/s/AKfycbxgi1QRk0e2NiWfm_OT7IooXmvivwqMunMHhBMfyTKLu_pSE1zS6zSSGJNd5pelCFzy/exec";
+"https://script.google.com/macros/s/AKfycbwVMHCGUz4a9QgFY-HfT3aRN1kw23RZ882j_MAeIVzj9_QM5H4ezJWLytIoicmfHwL7qg/exec";
 
 async function subirSync() {
 
     const datos = {};
 
+    // Inputs
     document.querySelectorAll(
         'input[id], textarea[id], select[id]'
     ).forEach(el => {
@@ -973,14 +974,21 @@ async function subirSync() {
         datos[el.id] = el.value;
     });
 
+    // dinámicos
     datos["container-quedan"] =
-        localStorage.getItem("container-quedan");
+        localStorage.getItem(
+            "container-quedan"
+        );
 
     datos["container-salientes"] =
-        localStorage.getItem("container-salientes");
+        localStorage.getItem(
+            "container-salientes"
+        );
 
     datos["container-materiales"] =
-        localStorage.getItem("container-materiales");
+        localStorage.getItem(
+            "container-materiales"
+        );
 
     try {
 
@@ -988,11 +996,10 @@ async function subirSync() {
             DRIVE_API,
             {
                 method: "POST",
-
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                    "application/json"
                 },
-
                 body: JSON.stringify(datos)
             }
         );
@@ -1000,19 +1007,23 @@ async function subirSync() {
         const json =
             await response.json();
 
-        if (!json.url) {
+        if (!json.ok) {
 
             throw new Error(
-                "No se recibió URL"
+                json.error || "Error"
             );
         }
 
-        const url =
+        // URL sincronización
+        const syncURL =
             location.origin +
             location.pathname +
             "?file=" +
-            encodeURIComponent(json.url);
+            encodeURIComponent(
+                json.url
+            );
 
+        // mostrar QR
         document.getElementById(
             "qrBox"
         ).style.display = "block";
@@ -1022,11 +1033,9 @@ async function subirSync() {
                 "qrCanvas"
             );
 
-        canvas.innerHTML = "";
-
         QRCode.toCanvas(
             canvas,
-            url,
+            syncURL,
             {
                 width: 220
             }
