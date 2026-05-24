@@ -960,7 +960,7 @@ location.origin + location.pathname;
 // SUBIR SINCRONIZACIÓN REAL
 // ===============================
 const DRIVE_API =
-"https://script.google.com/macros/s/AKfycbySvqFRJnQJkJgklpSr5tPszRvhs-RqLq1DwsU5G3Wy7B_7DXKWA9QwuLbjD4Agx8Z_/exec";
+"https://script.google.com/macros/s/AKfycbxgi1QRk0e2NiWfm_OT7IooXmvivwqMunMHhBMfyTKLu_pSE1zS6zSSGJNd5pelCFzy/exec";
 
 async function subirSync() {
 
@@ -984,59 +984,66 @@ async function subirSync() {
 
     try {
 
-       async function subirSync() {
+        const response = await fetch(
+            DRIVE_API,
+            {
+                method: "POST",
 
-    const datos = {};
+                headers: {
+                    "Content-Type": "application/json"
+                },
 
-    document.querySelectorAll(
-        'input[id], textarea[id], select[id]'
-    ).forEach(el => {
+                body: JSON.stringify(datos)
+            }
+        );
 
-        datos[el.id] = el.value;
-    });
+        const json =
+            await response.json();
 
-    datos["container-quedan"] =
-        localStorage.getItem("container-quedan");
+        if (!json.url) {
 
-    datos["container-salientes"] =
-        localStorage.getItem("container-salientes");
+            throw new Error(
+                "No se recibió URL"
+            );
+        }
 
-    datos["container-materiales"] =
-        localStorage.getItem("container-materiales");
+        const url =
+            location.origin +
+            location.pathname +
+            "?file=" +
+            encodeURIComponent(json.url);
 
-    try {
+        document.getElementById(
+            "qrBox"
+        ).style.display = "block";
 
-        const response = await fetch(DRIVE_API, {
-            method: "POST",
+        const canvas =
+            document.getElementById(
+                "qrCanvas"
+            );
 
-            mode: "no-cors",
+        canvas.innerHTML = "";
 
-            headers: {
-                "Content-Type": "application/json"
-            },
+        QRCode.toCanvas(
+            canvas,
+            url,
+            {
+                width: 220
+            }
+        );
 
-            body: JSON.stringify(datos)
-        });
-
-        alert("✅ Datos subidos correctamente");
+        alert("✅ QR generado");
 
     } catch(err) {
 
         console.error(err);
 
-        alert("❌ Error subiendo datos: " + err.message);
+        alert(
+            "❌ Error subiendo datos: " +
+            err.message
+        );
     }
 }
-
-
-    } catch(err) {
-
-        console.error(err);
-
-         alert("Error subiendo datos: " + err.message);
-    }
-}
-
 // ===============================
 // CERRAR QR
 // ===============================
