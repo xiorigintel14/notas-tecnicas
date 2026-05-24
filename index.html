@@ -1028,25 +1028,6 @@ async function subirSync() {
     }
 }
 
-        const url =
-    location.origin +
-    location.pathname +
-    "?file=" +
-    encodeURIComponent(json.url);
-
-        document.getElementById(
-            "qrBox"
-        ).style.display = "block";
-
-        QRCode.toCanvas(
-            document.getElementById(
-                "qrCanvas"
-            ),
-            url,
-            {
-                width: 220
-            }
-        );
 
     } catch(err) {
 
