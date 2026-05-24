@@ -984,22 +984,49 @@ async function subirSync() {
 
     try {
 
-       const response = await fetch(
-    DRIVE_API,
-    {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(datos)
+       async function subirSync() {
+
+    const datos = {};
+
+    document.querySelectorAll(
+        'input[id], textarea[id], select[id]'
+    ).forEach(el => {
+
+        datos[el.id] = el.value;
+    });
+
+    datos["container-quedan"] =
+        localStorage.getItem("container-quedan");
+
+    datos["container-salientes"] =
+        localStorage.getItem("container-salientes");
+
+    datos["container-materiales"] =
+        localStorage.getItem("container-materiales");
+
+    try {
+
+        const response = await fetch(DRIVE_API, {
+            method: "POST",
+
+            mode: "no-cors",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify(datos)
+        });
+
+        alert("✅ Datos subidos correctamente");
+
+    } catch(err) {
+
+        console.error(err);
+
+        alert("❌ Error subiendo datos: " + err.message);
     }
-);
-
-const text = await response.text();
-
-console.log(text);
-
-const json = JSON.parse(text);
+}
 
         const url =
     location.origin +
