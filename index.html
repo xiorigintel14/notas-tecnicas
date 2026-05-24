@@ -959,98 +959,67 @@ location.origin + location.pathname;
 // ===============================
 // SUBIR SINCRONIZACIÓN REAL
 // ===============================
+const DRIVE_API =
+"https://script.google.com/macros/s/AKfycbySvqFRJnQJkJgklpSr5tPszRvhs-RqLq1DwsU5G3Wy7B_7DXKWA9QwuLbjD4Agx8Z_/exec";
+
 async function subirSync() {
+
+    const datos = {};
+
+    document.querySelectorAll(
+        'input[id], textarea[id], select[id]'
+    ).forEach(el => {
+
+        datos[el.id] = el.value;
+    });
+
+    datos["container-quedan"] =
+        localStorage.getItem("container-quedan");
+
+    datos["container-salientes"] =
+        localStorage.getItem("container-salientes");
+
+    datos["container-materiales"] =
+        localStorage.getItem("container-materiales");
 
     try {
 
-        const datos = {};
-
-        document.querySelectorAll(
-            'input[id], textarea[id], select[id]'
-        ).forEach(el => {
-
-            datos[el.id] = el.value;
-        });
-
-        datos["container-quedan"] =
-            localStorage.getItem("container-quedan");
-
-        datos["container-salientes"] =
-            localStorage.getItem("container-salientes");
-
-        datos["container-materiales"] =
-            localStorage.getItem("container-materiales");
-
-        // CREAR GIST
         const response = await fetch(
-            "https://api.github.com/gists",
+            DRIVE_API,
             {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Accept": "application/vnd.github+json"
-                },
-                body: JSON.stringify({
-                    description: "Sync notas",
-                    public: false,
-                    files: {
-                        "datos.json": {
-                            content: JSON.stringify(datos)
-                        }
-                    }
-                })
+                body: JSON.stringify(datos)
             }
         );
 
-        // VALIDAR
-        if (!response.ok) {
+        const json =
+            await response.json();
 
-            const error = await response.text();
-
-            console.error(error);
-
-            alert("❌ GitHub bloqueó la sincronización");
-
-            return;
-        }
-
-        const gist = await response.json();
-
-        if (!gist.id) {
-
-            alert("❌ No se pudo crear GIST");
-
-            return;
-        }
-
-        // URL FINAL
         const url =
-            SYNC_URL + "?gist=" + gist.id;
+    location.origin +
+    location.pathname +
+    "?file=" +
+    encodeURIComponent(json.url);
 
-        // MOSTRAR QR
-        document.getElementById("qrBox")
-            .style.display = "block";
-
-        const canvas =
-            document.getElementById("qrCanvas");
-
-        canvas.innerHTML = "";
+        document.getElementById(
+            "qrBox"
+        ).style.display = "block";
 
         QRCode.toCanvas(
-            canvas,
+            document.getElementById(
+                "qrCanvas"
+            ),
             url,
             {
-                width: 240
+                width: 220
             }
         );
-
-        alert("✅ QR generado");
 
     } catch(err) {
 
         console.error(err);
 
-        alert("❌ Error creando sincronización");
+        alert("Error subiendo datos");
     }
 }
 
@@ -1067,6 +1036,9 @@ function cerrarQR() {
 // ===============================
 // IMPORTAR DESDE GIST
 // ===============================
+// ===============================
+// IMPORTAR DESDE GOOGLE DRIVE
+// ===============================
 async function importarSync() {
 
     const params =
@@ -1074,26 +1046,21 @@ async function importarSync() {
             location.search
         );
 
-    const gistId =
-        params.get("gist");
+    const fileUrl =
+        params.get("file");
 
-    if (!gistId) return;
+    if (!fileUrl) return;
 
     try {
 
-        const response = await fetch(
-            "https://api.github.com/gists/" + gistId
-        );
-
-        const gist =
-            await response.json();
-
-        const contenido =
-            gist.files["datos.json"].content;
+        // descargar json
+        const response =
+            await fetch(fileUrl);
 
         const json =
-            JSON.parse(contenido);
+            await response.json();
 
+        // restaurar inputs
         Object.keys(json)
         .forEach(key => {
 
@@ -1112,6 +1079,7 @@ async function importarSync() {
             }
         });
 
+        // restaurar dinámicos
         [
             "container-quedan",
             "container-salientes",
@@ -1127,10 +1095,16 @@ async function importarSync() {
             }
         });
 
-        alert("✅ Datos sincronizados");
+        alert(
+            "✅ Datos sincronizados"
+        );
 
-        location.href =
-            location.pathname;
+        // limpiar url
+        history.replaceState(
+            {},
+            "",
+            location.pathname
+        );
 
         location.reload();
 
@@ -1139,12 +1113,12 @@ async function importarSync() {
         console.error(err);
 
         alert(
-            "Error importando datos"
+            "❌ Error importando datos"
         );
     }
 }
 
-// Ejecutar
+// ejecutar
 importarSync();
 
 </script>
