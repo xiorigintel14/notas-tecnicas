@@ -948,6 +948,8 @@ async function borrarTodo() {
 
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+<script>
+
 // ===============================
 // URL WEB APP
 // ===============================
@@ -983,33 +985,41 @@ async function subirSync() {
         .toString(36)
         .substring(2,10);
 
-    // Guardar online
+    // Guardar
     localStorage.setItem(
         "sync_" + id,
         JSON.stringify(datos)
     );
 
-    // Crear URL QR
+    // Crear URL
     const url =
         SYNC_URL + "?sync=" + id;
 
-    // Mostrar QR
+    // Mostrar ventana QR
     document.getElementById(
         "qrBox"
     ).style.display = "block";
 
+    // Canvas
     const canvas =
         document.getElementById(
             "qrCanvas"
         );
 
-    canvas.innerHTML = "";
-
+    // Generar QR
     QRCode.toCanvas(
         canvas,
         url,
         {
             width: 220
+        },
+        function(error) {
+
+            if (error) {
+                console.error(error);
+                alert("Error generando QR");
+            }
+
         }
     );
 }
@@ -1102,6 +1112,9 @@ function importarSync() {
 // Ejecutar automático
 importarSync();
 
+</script>
+
+
 <div id="qrBox"
 style="
 position:fixed;
@@ -1133,5 +1146,6 @@ Cerrar
 </button>
 
 </div>
+
 </body>
 </html>
