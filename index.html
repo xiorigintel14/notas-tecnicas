@@ -984,16 +984,22 @@ async function subirSync() {
 
     try {
 
-        const response = await fetch(
-            DRIVE_API,
-            {
-                method: "POST",
-                body: JSON.stringify(datos)
-            }
-        );
+       const response = await fetch(
+    DRIVE_API,
+    {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(datos)
+    }
+);
 
-        const json =
-            await response.json();
+const text = await response.text();
+
+console.log(text);
+
+const json = JSON.parse(text);
 
         const url =
     location.origin +
