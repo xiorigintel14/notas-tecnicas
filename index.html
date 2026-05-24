@@ -411,9 +411,6 @@ BOTONES FLOTANTES
     fetch(GOOGLE_SHEETS_URL, {
         method: "POST",
         mode: "no-cors",
-        headers: {
-            "Content-Type": "application/json"
-        },
         body: JSON.stringify(datos)
     })
     .then(() => {
@@ -960,13 +957,12 @@ location.origin + location.pathname;
 // SUBIR SINCRONIZACIÓN REAL
 // ===============================
 const DRIVE_API =
-"https://script.google.com/macros/s/AKfycbwVMHCGUz4a9QgFY-HfT3aRN1kw23RZ882j_MAeIVzj9_QM5H4ezJWLytIoicmfHwL7qg/exec";
+"https://script.google.com/macros/s/AKfycbzWh_r_DMUsAVBM9Ow_OmFmtYERPIHt6v5gDFIUZpiJkpL1h5LXJTDYc5EzirYFz3a-/exec";
 
 async function subirSync() {
 
     const datos = {};
 
-    // Inputs
     document.querySelectorAll(
         'input[id], textarea[id], select[id]'
     ).forEach(el => {
@@ -974,21 +970,14 @@ async function subirSync() {
         datos[el.id] = el.value;
     });
 
-    // dinámicos
     datos["container-quedan"] =
-        localStorage.getItem(
-            "container-quedan"
-        );
+        localStorage.getItem("container-quedan");
 
     datos["container-salientes"] =
-        localStorage.getItem(
-            "container-salientes"
-        );
+        localStorage.getItem("container-salientes");
 
     datos["container-materiales"] =
-        localStorage.getItem(
-            "container-materiales"
-        );
+        localStorage.getItem("container-materiales");
 
     try {
 
@@ -996,49 +985,35 @@ async function subirSync() {
             DRIVE_API,
             {
                 method: "POST",
-                headers: {
-                    "Content-Type":
-                    "application/json"
-                },
+
                 body: JSON.stringify(datos)
             }
         );
 
-        const json =
-            await response.json();
+        const text = await response.text();
 
-        if (!json.ok) {
+        console.log(text);
 
-            throw new Error(
-                json.error || "Error"
-            );
+        const json = JSON.parse(text);
+
+        if (!json.url) {
+            throw new Error("No se recibió URL");
         }
 
-        // URL sincronización
-        const syncURL =
+        const url =
             location.origin +
             location.pathname +
             "?file=" +
-            encodeURIComponent(
-                json.url
-            );
+            encodeURIComponent(json.url);
 
-        // mostrar QR
         document.getElementById(
             "qrBox"
         ).style.display = "block";
 
-        const canvas =
-            document.getElementById(
-                "qrCanvas"
-            );
-
         QRCode.toCanvas(
-            canvas,
-            syncURL,
-            {
-                width: 220
-            }
+            document.getElementById("qrCanvas"),
+            url,
+            { width: 220 }
         );
 
         alert("✅ QR generado");
