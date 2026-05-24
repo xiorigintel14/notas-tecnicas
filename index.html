@@ -305,6 +305,14 @@ BOTONES FLOTANTES
     >
 
     <div class="float-buttons">
+        
+    <button
+        class="float-btn"
+        onclick="subirSync()"
+        title="Sincronizar">
+        📲
+    </button>
+
 
     <button
         class="float-btn"
@@ -939,5 +947,191 @@ async function borrarTodo() {
 </script>
 
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+// ===============================
+// URL WEB APP
+// ===============================
+const SYNC_URL =
+"https://xiorigintel14.github.io/notas-tecnicas/";
+
+// ===============================
+// SUBIR SINCRONIZACIÓN
+// ===============================
+async function subirSync() {
+
+    const datos = {};
+
+    document.querySelectorAll(
+        'input[id], textarea[id], select[id]'
+    ).forEach(el => {
+
+        datos[el.id] = el.value;
+    });
+
+    datos["container-quedan"] =
+        localStorage.getItem("container-quedan");
+
+    datos["container-salientes"] =
+        localStorage.getItem("container-salientes");
+
+    datos["container-materiales"] =
+        localStorage.getItem("container-materiales");
+
+    // ID único
+    const id =
+        Math.random()
+        .toString(36)
+        .substring(2,10);
+
+    // Guardar online
+    localStorage.setItem(
+        "sync_" + id,
+        JSON.stringify(datos)
+    );
+
+    // Crear URL QR
+    const url =
+        SYNC_URL + "?sync=" + id;
+
+    // Mostrar QR
+    document.getElementById(
+        "qrBox"
+    ).style.display = "block";
+
+    const canvas =
+        document.getElementById(
+            "qrCanvas"
+        );
+
+    canvas.innerHTML = "";
+
+    QRCode.toCanvas(
+        canvas,
+        url,
+        {
+            width: 220
+        }
+    );
+}
+
+// ===============================
+// CERRAR QR
+// ===============================
+function cerrarQR() {
+
+    document.getElementById(
+        "qrBox"
+    ).style.display = "none";
+}
+
+// ===============================
+// IMPORTAR SYNC
+// ===============================
+function importarSync() {
+
+    const params =
+        new URLSearchParams(
+            location.search
+        );
+
+    const id =
+        params.get("sync");
+
+    if (!id) return;
+
+    const datos =
+        localStorage.getItem(
+            "sync_" + id
+        );
+
+    if (!datos) {
+
+        alert(
+            "No existen datos"
+        );
+
+        return;
+    }
+
+    const json =
+        JSON.parse(datos);
+
+    Object.keys(json)
+    .forEach(key => {
+
+        const el =
+            document.getElementById(
+                key
+            );
+
+        if (el) {
+
+            el.value =
+                json[key];
+
+            localStorage.setItem(
+                key,
+                json[key]
+            );
+        }
+    });
+
+    [
+        "container-quedan",
+        "container-salientes",
+        "container-materiales"
+    ].forEach(id => {
+
+        if (json[id]) {
+
+            localStorage.setItem(
+                id,
+                json[id]
+            );
+        }
+    });
+
+    alert("✅ Datos sincronizados");
+
+    location.href =
+        location.pathname;
+
+    location.reload();
+}
+
+// Ejecutar automático
+importarSync();
+
+<div id="qrBox"
+style="
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+background:#1e1e1e;
+padding:20px;
+border-radius:15px;
+display:none;
+z-index:99999;
+text-align:center;
+">
+
+<canvas id="qrCanvas"></canvas>
+
+<br><br>
+
+<button onclick="cerrarQR()"
+style="
+padding:10px 20px;
+border:none;
+border-radius:10px;
+background:#cf6679;
+color:white;
+font-weight:bold;
+">
+Cerrar
+</button>
+
+</div>
 </body>
 </html>
