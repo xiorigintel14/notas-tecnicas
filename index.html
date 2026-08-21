@@ -337,21 +337,104 @@ BOTONES FLOTANTES
 
     <script>
 
-        window.addEventListener('online', () => {
-    let pendientes = JSON.parse(localStorage.getItem('enviosPendientes') || "[]");
-    if (pendientes.length === 0) return;
+       window.addEventListener('online', async () => {
 
-    pendientes.forEach(d => {
-        fetch(GOOGLE_SHEETS_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(d)
-        });
-    });
+    let pendientes = JSON.parse(
+        localStorage.getItem('enviosPendientes') || "[]"
+    );
+
+    if (pendientes.length === 0) {
+        return;
+    }
+
+    console.log(
+        "📡 Recuperando " +
+        pendientes.length +
+        " registro(s) pendiente(s)..."
+    );
+
+
+    for (const d of pendientes) {
+
+        try {
+
+            // ==========================================
+            // 1. ENVIAR AL GOOGLE SHEETS PRINCIPAL
+            // ==========================================
+
+            await fetch(GOOGLE_SHEETS_URL, {
+                method: "POST",
+                mode: "no-cors",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(d)
+            });
+
+
+            console.log(
+                "✅ Registro principal enviado"
+            );
+
+
+            // ==========================================
+            // 2. SI ES ORICUE-10,
+            //    ENVIAR TAMBIÉN LOS MATERIALES
+            // ==========================================
+
+            const tec = String(d.tec || "")
+                .trim()
+                .toUpperCase();
+
+
+            if (tec === "ORICUE-10") {
+
+                console.log(
+                    "📦 Enviando materiales ORICUE-10..."
+                );
+
+
+                await enviarMaterialesOricue10({
+                    fecha: d.fecha,
+                    tec: d.tec,
+                    cto: d.cto,
+                    cliente: d.cliente,
+                    materiales: d.materiales
+                });
+
+
+                console.log(
+                    "✅ Materiales ORICUE-10 enviados"
+                );
+
+            }
+
+        } catch (error) {
+
+            console.error(
+                "❌ Error enviando registro pendiente:",
+                error
+            );
+
+            // Si ocurre un error, NO continuamos
+            // para evitar borrar información pendiente.
+            return;
+        }
+
+    }
+
+
+    // ==========================================
+    // 3. SOLO BORRAR LA COLA CUANDO TERMINÓ
+    // ==========================================
 
     localStorage.removeItem('enviosPendientes');
-    alert("📡 Datos pendientes enviados automáticamente");
+
+
+    alert(
+        "📡 Datos pendientes enviados automáticamente"
+    );
+
 });
 
 
@@ -398,6 +481,48 @@ BOTONES FLOTANTES
 }
 
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzOASlbv-kxIv2Ko6Jbu3hJ9MigM7JrMUQ4WUElJL7Vu8wLkxoCQKb-a-mUHE_ofC5Cnw/exec";
+        const MATERIAL_ORICUE10_URL = "https://script.google.com/macros/s/AKfycbzhcISUQKYWhJbZ4Mk34kogDifccir-gxKxkpWlUT-5kclrIWuEznFxEfMQPmXTv0M/exec";
+
+        function enviarMaterialesOricue10(datos) {
+
+    const tec = String(datos.tec || "")
+        .trim()
+        .toUpperCase();
+
+    // Solo enviar materiales si TEC es ORICUE-10
+    if (tec !== "ORICUE-10") {
+        return Promise.resolve();
+    }
+
+    // Si estamos sin Internet,
+    // NO enviamos aquí porque los datos completos
+    // ya quedaron guardados en enviosPendientes.
+    if (!navigator.onLine) {
+        console.log("📴 ORICUE-10 pendiente por falta de Internet");
+        return Promise.resolve();
+    }
+
+    return fetch(MATERIAL_ORICUE10_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body: JSON.stringify({
+            fecha: datos.fecha,
+            tec: datos.tec,
+            cto: datos.cto,
+            cliente: datos.cliente,
+            materiales: datos.materiales
+        })
+    })
+    .then(() => {
+        console.log("✅ Materiales ORICUE-10 enviados");
+    })
+    .catch(error => {
+        console.error(
+            "❌ Error enviando materiales ORICUE-10:",
+            error
+        );
+    });
+}
 
         function enviarAGoogleSheets() {
 
@@ -766,6 +891,15 @@ function guardarOffline(datos) {
                 `* *¿Con cuanto califica usted la experiencia recibida con el trabajo del grupo técnico?* ${d.C1}\n`+
                 `* *¿De acuerdo a esta experiencia, usted recomendaría nuestro servicio y trabajo?* ${d.C2}\n`;
                 enviarAGoogleSheets();
+
+                enviarMaterialesOricue10({
+                fecha: new Date().toLocaleString(),
+                tec: d.tec,
+                cto: d.cto,
+                cliente: d.cli,
+                materiales: l_mat
+                });
+
             } 
             else if(tipo === 3) { // OBS
                 txt = 
