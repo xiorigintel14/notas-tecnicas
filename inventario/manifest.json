@@ -1,9 +1,9 @@
 {
-  "id": "/notas-tecnicas/inventario/",
+  "id": "/inventario-oricue10/",
   "name": "Inventario ORICUE-10",
   "short_name": "Inventario",
-  "start_url": "./",
-  "scope": "./",
+  "start_url": "/inventario-oricue10/",
+  "scope": "/inventario-oricue10/",
   "display": "standalone",
   "background_color": "#121212",
   "theme_color": "#121212",
