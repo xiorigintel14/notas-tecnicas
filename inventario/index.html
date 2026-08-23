@@ -3,8 +3,19 @@
 
 <head>
 
+<link
+  rel="manifest"
+  href="./manifest.json"
+>
+
+<meta
+  name="theme-color"
+  content="#121212"
+>
+
+
   <meta charset="UTF-8">
- 
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
@@ -3704,6 +3715,43 @@ document.addEventListener(
 
 </script>
 
+<script>
+
+if (
+  "serviceWorker" in navigator
+) {
+
+  window.addEventListener(
+    "load",
+    function() {
+
+      navigator.serviceWorker
+        .register(
+          "./service-worker.js"
+        )
+        .then(function(registration) {
+
+          console.log(
+            "Service Worker Inventario registrado",
+            registration.scope
+          );
+
+        })
+        .catch(function(error) {
+
+          console.error(
+            "Error registrando Service Worker:",
+            error
+          );
+
+        });
+
+    }
+  );
+
+}
+
+</script>
 
 </body>
 
