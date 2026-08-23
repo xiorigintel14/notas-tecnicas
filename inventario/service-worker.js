@@ -1,5 +1,5 @@
 const CACHE_NAME =
-  "inventario-oricue10-v2";
+  "inventario-oricue10-v3";
 
 
 const STATIC_FILES = [
