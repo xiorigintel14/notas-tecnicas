@@ -10,6 +10,43 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#121212">
     <style>
+
+/* ==============================
+   MATERIALES INVENTARIO
+============================== */
+
+.material-row {
+    display: grid !important;
+    grid-template-columns: 2fr 1fr 44px;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+    width: 100%;
+}
+
+.material-select {
+    width: 100%;
+    min-width: 0;
+    padding: 11px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    color: #ffb74d;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.material-cantidad {
+    width: 100%;
+    min-width: 0;
+    padding: 11px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+       
+
+
         /* ESTILOS GENERALES */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #121212; color: #e0e0e0; padding: 15px; padding-bottom: 120px; margin: 0; }
         
@@ -266,8 +303,18 @@ BOTONES FLOTANTES
     </div>
 
     <h3>🛠️ Materiales</h3>
-    <div id="container-materiales"></div>
-    <button class="btn-add" onclick="addRow('container-materiales', '', '')">➕ Material</button>
+
+<p style="font-size:11px; color:#aaa; margin-bottom:10px;">
+    Selecciona el material y coloca la cantidad utilizada.
+</p>
+
+<div id="container-materiales"></div>
+
+<button
+    class="btn-add"
+    onclick="addMaterialRow('', '')">
+    ➕ AGREGAR MATERIAL
+</button>
 
     <h3>📝 GESTION DE CALIDAD</h3>
      <p style="margin:0; font-size:16px; color:#feffef; margin-bottom:5px;">Respuestas dadas por el cliente en sitio. En una escala del 1 al 10, siendo el 10 la calificación más alta.</p>
@@ -395,12 +442,36 @@ BOTONES FLOTANTES
 
 
                 await enviarMaterialesOricue10({
-                    fecha: d.fecha,
-                    tec: d.tec,
-                    cto: d.cto,
-                    cliente: d.cliente,
-                    materiales: d.materiales
-                });
+
+    fecha:
+        d.fecha,
+
+    tec:
+        d.tec,
+
+    numTarea: 
+        d.ntr,
+
+    cto:
+        d.cto,
+
+    cliente:
+        d.cliente,
+
+    materiales:
+        d.materiales,
+
+    fibraTotal:
+        d.fibraTotal,
+
+    utpTotal:
+        d.utpTotal,
+
+    rg6Total:
+        d.rg6Total
+
+
+});
 
 
                 console.log(
@@ -482,46 +553,155 @@ BOTONES FLOTANTES
 
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzOASlbv-kxIv2Ko6Jbu3hJ9MigM7JrMUQ4WUElJL7Vu8wLkxoCQKb-a-mUHE_ofC5Cnw/exec";
         const MATERIAL_ORICUE10_URL = "https://script.google.com/macros/s/AKfycbzhcISUQKYWhJbZ4Mk34kogDifccir-gxKxkpWlUT-5kclrIWuEznFxEfMQPmXTv0M/exec";
+        const INVENTARIO_ORICUE10_URL = "https://script.google.com/macros/s/AKfycbxIKlHure5mzwgRrBDAHSKS69_1kd_mLpaKYwirYQ7Y8cJvJECje5b24H6I3SKZuYe0/exec";
 
-        function enviarMaterialesOricue10(datos) {
+      function enviarMaterialesOricue10(datos) {
 
     const tec = String(datos.tec || "")
         .trim()
         .toUpperCase();
 
-    // Solo enviar materiales si TEC es ORICUE-10
+    // Solo ORICUE-10
     if (tec !== "ORICUE-10") {
         return Promise.resolve();
     }
 
-    // Si estamos sin Internet,
-    // NO enviamos aquí porque los datos completos
-    // ya quedaron guardados en enviosPendientes.
-    if (!navigator.onLine) {
-        console.log("📴 ORICUE-10 pendiente por falta de Internet");
-        return Promise.resolve();
+
+    // ==========================================
+    // CONSTRUIR LISTA COMPLETA DE MATERIALES
+    // ==========================================
+
+    const lista = [];
+
+
+    // Materiales normales
+    if (
+        datos.materiales &&
+        String(datos.materiales).trim() !== ""
+    ) {
+
+        lista.push(
+            String(datos.materiales).trim()
+        );
+
     }
 
-    return fetch(MATERIAL_ORICUE10_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body: JSON.stringify({
-            fecha: datos.fecha,
-            tec: datos.tec,
-            cto: datos.cto,
-            cliente: datos.cliente,
-            materiales: datos.materiales
-        })
-    })
+
+    // ==========================================
+    // CABLES CALCULADOS
+    // ==========================================
+
+    agregarCableMaterial(
+        lista,
+        "FIBRA OPTICA",
+        datos.fibraTotal
+    );
+
+    agregarCableMaterial(
+        lista,
+        "UTP",
+        datos.utpTotal
+    );
+
+    agregarCableMaterial(
+        lista,
+        "RG6",
+        datos.rg6Total
+    );
+
+
+    const materialesCompletos =
+        lista.join("\n");
+
+
+    // Sin Internet:
+    // los datos completos ya quedan en
+    // enviosPendientes.
+    if (!navigator.onLine) {
+
+        console.log(
+            "📴 ORICUE-10 pendiente por falta de Internet"
+        );
+
+        return Promise.resolve();
+
+    }
+
+
+    return fetch(
+        MATERIAL_ORICUE10_URL,
+        {
+            method: "POST",
+            mode: "no-cors",
+
+            body: JSON.stringify({
+
+                fecha: datos.fecha,
+
+                tec: datos.tec,
+
+                numTarea: datos.numTarea,
+
+                registroId: datos.registroId,
+
+                cto: datos.cto,
+
+                cliente: datos.cliente,
+
+                materiales:
+                    materialesCompletos
+
+            })
+
+        }
+    )
+
     .then(() => {
-        console.log("✅ Materiales ORICUE-10 enviados");
+
+        console.log(
+            "✅ Materiales ORICUE-10 enviados"
+        );
+
     })
+
     .catch(error => {
+
         console.error(
             "❌ Error enviando materiales ORICUE-10:",
             error
         );
+
     });
+
+}
+
+
+// =====================================================
+// AGREGAR CABLE AL MATERIAL
+// =====================================================
+
+function agregarCableMaterial(
+    lista,
+    nombre,
+    cantidad
+) {
+
+    const numero =
+        Number(cantidad || 0);
+
+    // No guardar cables con cantidad 0
+    if (
+        !Number.isFinite(numero) ||
+        numero <= 0
+    ) {
+        return;
+    }
+
+
+    lista.push(
+        `• *${nombre}:* ${numero}`
+    );
+
 }
 
         function enviarAGoogleSheets() {
@@ -570,16 +750,42 @@ function guardarOffline(datos) {
             setTimeout(() => status.innerText = "", 2000);
         }
 
-        function saveDynamicSection(containerId) {
-            const data = [];
-            document.querySelectorAll(`#${containerId} .dynamic-row`).forEach(row => {
-                data.push({
-                    name: row.querySelector('.name').value,
-                    desc: row.querySelector('.desc').value
-                });
+function saveDynamicSection(containerId) {
+
+    const data = [];
+
+    let selectorFila = '.dynamic-row';
+
+    if (containerId === 'container-materiales') {
+        selectorFila = '.material-row';
+    }
+
+    document
+        .querySelectorAll(`#${containerId} ${selectorFila}`)
+        .forEach(row => {
+
+            const name =
+                row.querySelector('.name')
+                    ? row.querySelector('.name').value
+                    : '';
+
+            const desc =
+                row.querySelector('.desc')
+                    ? row.querySelector('.desc').value
+                    : '';
+
+            data.push({
+                name: name,
+                desc: desc
             });
-            localStorage.setItem(containerId, JSON.stringify(data));
-        }
+
+        });
+
+    localStorage.setItem(
+        containerId,
+        JSON.stringify(data)
+    );
+}
 
         function loadData() {
             if (localStorage.getItem('migra_saved') === 'true') {
@@ -597,26 +803,101 @@ function guardarOffline(datos) {
             }
         }
 
-        function loadDynamicSection(containerId) {
-            const json = localStorage.getItem(containerId);
-            if (json) {
-                const data = JSON.parse(json);
-                if(data.length > 0) {
-                    data.forEach(item => addRow(containerId, item.name, item.desc));
-                }
-            }
+function loadDynamicSection(containerId) {
+
+    const json =
+        localStorage.getItem(containerId);
+
+
+    if (!json) {
+        return;
+    }
+
+
+    const data =
+        JSON.parse(json);
+
+
+    if (!data || data.length === 0) {
+        return;
+    }
+
+
+    data.forEach(function(item) {
+
+
+        // ==========================================
+        // MATERIALES
+        // ==========================================
+
+        if (
+            containerId ===
+            'container-materiales'
+        ) {
+
+            addMaterialRow(
+                item.name,
+                item.desc
+            );
+
         }
 
-        function loadDefaults() {
-            addRow('container-salientes', 'ONT:', '');
-            addRow('container-salientes', 'ROUTER:', '');
-            addRow('container-quedan', 'ONT:', '');
-            addRow('container-quedan', 'ROUTER:', '');
-            addRow('container-quedan', 'ROUTER 2:', '');
-            const mats = [['CONECTORES', '2'], ['AMARRAS', '5'], ['TENSORES', '2'], ['GRAPAS', '10'], ['RJ45', '0'], ['TUBILLOS', '0']];
-            mats.forEach(m => addRow('container-materiales', m[0], m[1]));
-            saveData();
+
+        // ==========================================
+        // EQUIPOS
+        // ==========================================
+
+        else {
+
+            addRow(
+                containerId,
+                item.name,
+                item.desc
+            );
+
         }
+
+    });
+
+}
+
+       function loadDefaults() {
+
+    // EQUIPOS
+    addRow('container-salientes', 'ONT:', '');
+    addRow('container-salientes', 'ROUTER:', '');
+
+    addRow('container-quedan', 'ONT:', '');
+    addRow('container-quedan', 'ROUTER:', '');
+    addRow('container-quedan', 'ROUTER 2:', '');
+
+
+    // ==========================================
+    // MATERIALES PREDETERMINADOS
+    // ==========================================
+
+    const mats = [
+        ['CONECTORES', '2'],
+        ['AMARRAS', '5'],
+        ['TENSORES', '2'],
+        ['GRAPAS', '10'],
+        ['RJ45', '0'],
+        ['TUBILLOS', '0']
+    ];
+
+
+    mats.forEach(function(m) {
+
+        addMaterialRow(
+            m[0],
+            m[1]
+        );
+
+    });
+
+
+    saveData();
+}
 
         function borrarTodo() {
             if(confirm("¿Borrar todos los datos y empezar de cero?")) {
@@ -625,7 +906,13 @@ function guardarOffline(datos) {
             }
         }
 
-        window.onload = function() { loadData(); };
+        window.onload = async function() {
+
+    await cargarListaMaterialesInventario();
+
+    loadData();
+
+};
 
         // --- FUNCIONES DE LA HERRAMIENTA ---
         function getGPS(inputId) {
@@ -678,48 +965,516 @@ function guardarOffline(datos) {
 }
 
 
+        // =====================================================
+// LISTA DE MATERIALES PARA INVENTARIO
+// =====================================================
+
+let listaMaterialesInventario = [];
+
+
+// =====================================================
+// CARGAR LISTA DESDE MATERIAL_ORICUE10
+// =====================================================
+
+async function cargarListaMaterialesInventario() {
+
+    try {
+
+        const response = await fetch(
+            INVENTARIO_ORICUE10_URL +
+            "?accion=LISTA_MATERIALES"
+        );
+
+        const data = await response.json();
+
+        if (
+            data.success &&
+            Array.isArray(data.materiales)
+        ) {
+
+            listaMaterialesInventario =
+                data.materiales.map(item => item.material);
+
+            // Guardar copia para trabajar sin internet
+            localStorage.setItem(
+                "listaMaterialesInventario",
+                JSON.stringify(listaMaterialesInventario)
+            );
+
+            console.log(
+                "✅ Lista de materiales cargada:",
+                listaMaterialesInventario.length
+            );
+
+        }
+
+    } catch(error) {
+
+        console.log(
+            "📴 No se pudo descargar lista de materiales"
+        );
+
+        // Intentar cargar lista guardada
+        try {
+
+            listaMaterialesInventario =
+                JSON.parse(
+                    localStorage.getItem(
+                        "listaMaterialesInventario"
+                    ) || "[]"
+                );
+
+        } catch(e) {
+
+            listaMaterialesInventario = [];
+
+        }
+
+    }
+
+}
+
+function obtenerMaterialesSeleccionados() {
+
+    const seleccionados = [];
+
+    document
+        .querySelectorAll(
+            '#container-materiales .material-row .material-select'
+        )
+        .forEach(function(select) {
+
+            const valor =
+                String(select.value || "")
+                    .trim()
+                    .toUpperCase();
+
+            if (valor) {
+                seleccionados.push(valor);
+            }
+
+        });
+
+    return seleccionados;
+}
+
+// =====================================================
+// CREAR FILA DE MATERIAL
+// =====================================================
+
+function addMaterialRow(
+    material = "",
+    cantidad = ""
+) {
+
+    const container =
+        document.getElementById(
+            "container-materiales"
+        );
+
+    const div =
+        document.createElement("div");
+
+    div.className = "material-row";
+
+
+    // ==========================================
+    // CREAR SELECT DE MATERIAL
+    // ==========================================
+
+    const select =
+        document.createElement("select");
+
+    select.className =
+        "name material-select";
+
+
+    let opciones =
+        '<option value="">Material...</option>';
+
+
+    // ==========================================
+    // MATERIALES QUE NO DEBEN APARECER
+    // PORQUE SE MANEJAN EN METRAJES
+    // ==========================================
+
+    const materialesEspeciales = [
+        "FIBRA OPTICA",
+        "UTP",
+        "RG6"
+    ];
+
+
+    // ==========================================
+    // MATERIALES YA SELECCIONADOS
+    // ==========================================
+
+    const yaSeleccionados =
+        obtenerMaterialesSeleccionados();
+
+
+    // ==========================================
+    // CREAR LAS OPCIONES
+    // ==========================================
+
+    listaMaterialesInventario
+        .filter(function(nombre) {
+
+            const nombreNormalizado =
+                String(nombre || "")
+                    .trim()
+                    .toUpperCase();
+
+
+            // No mostrar los 3 cables especiales
+            if (
+                materialesEspeciales.includes(
+                    nombreNormalizado
+                )
+            ) {
+                return false;
+            }
+
+
+            // Si estamos recuperando una fila guardada,
+            // permitir su propio material.
+            const materialActual =
+                String(material || "")
+                    .trim()
+                    .toUpperCase();
+
+
+            if (
+                materialActual &&
+                nombreNormalizado === materialActual
+            ) {
+                return true;
+            }
+
+
+            // No mostrar material que ya se usa
+            // en otra fila.
+            return !yaSeleccionados.includes(
+                nombreNormalizado
+            );
+
+        })
+
+        .forEach(function(nombre) {
+
+            const nombreNormalizado =
+                String(nombre || "")
+                    .trim()
+                    .toUpperCase();
+
+            const materialActual =
+                String(material || "")
+                    .trim()
+                    .toUpperCase();
+
+
+            const seleccionado =
+                nombreNormalizado === materialActual
+                    ? "selected"
+                    : "";
+
+
+            opciones +=
+                `<option value="${nombre}" ${seleccionado}>` +
+                `${nombre}` +
+                `</option>`;
+
+        });
+
+
+    // ==========================================
+    // COMPATIBILIDAD CON MATERIAL ANTIGUO
+    // ==========================================
+
+    if (material) {
+
+        const materialActual =
+            String(material)
+                .trim()
+                .toUpperCase();
+
+
+        const existeEnLista =
+            listaMaterialesInventario.some(
+                function(nombre) {
+
+                    return (
+                        String(nombre || "")
+                            .trim()
+                            .toUpperCase()
+                        ===
+                        materialActual
+                    );
+
+                }
+            );
+
+
+        // Si existía guardado pero ya fue eliminado
+        // de Materiales_Lista, todavía lo recuperamos.
+        if (!existeEnLista) {
+
+            opciones +=
+                `<option value="${material}" selected>` +
+                `${material}` +
+                `</option>`;
+
+        }
+
+    }
+
+
+    select.innerHTML =
+        opciones;
+
+
+    // ==========================================
+    // CANTIDAD
+    // ==========================================
+
+    const inputCantidad =
+        document.createElement("input");
+
+    inputCantidad.type =
+        "number";
+
+    inputCantidad.className =
+        "desc material-cantidad";
+
+    inputCantidad.placeholder =
+        "Cant.";
+
+    inputCantidad.min =
+        "0";
+
+    inputCantidad.value =
+        cantidad;
+
+
+    // ==========================================
+    // BOTÓN ELIMINAR
+    // ==========================================
+
+    const boton =
+        document.createElement("button");
+
+    boton.className =
+        "btn-del";
+
+    boton.textContent =
+        "X";
+
+
+    boton.onclick =
+        function() {
+
+            div.remove();
+
+            saveData();
+
+        };
+
+
+    // ==========================================
+    // AGREGAR ELEMENTOS A LA FILA
+    // ==========================================
+
+    div.appendChild(select);
+
+    div.appendChild(inputCantidad);
+
+    div.appendChild(boton);
+
+
+    // ==========================================
+    // EVITAR MATERIAL REPETIDO
+    // ==========================================
+
+    select.addEventListener(
+        "change",
+        function() {
+
+            const seleccionado =
+                String(select.value || "")
+                    .trim()
+                    .toUpperCase();
+
+
+            if (!seleccionado) {
+
+                saveData();
+
+                return;
+
+            }
+
+
+            let veces =
+                0;
+
+
+            document
+                .querySelectorAll(
+                    '#container-materiales .material-select'
+                )
+                .forEach(function(otroSelect) {
+
+                    const valor =
+                        String(
+                            otroSelect.value || ""
+                        )
+                        .trim()
+                        .toUpperCase();
+
+
+                    if (
+                        valor === seleccionado
+                    ) {
+
+                        veces++;
+
+                    }
+
+                });
+
+
+            // Ya existe en otra fila
+            if (veces > 1) {
+
+                alert(
+                    "⚠️ El material " +
+                    seleccionado +
+                    " ya está seleccionado."
+                );
+
+                select.value = "";
+
+                saveData();
+
+                return;
+
+            }
+
+
+            saveData();
+
+        }
+    );
+
+
+    // Guardar cantidad automáticamente
+    inputCantidad.addEventListener(
+        "input",
+        saveData
+    );
+
+
+    // ==========================================
+    // MOSTRAR FILA
+    // ==========================================
+
+    container.appendChild(div);
+
+}
+
         function removeRow(btn) {
             btn.parentElement.remove();
             saveData();
         }
 
- function readDynamic(containerId) {
+function readDynamic(containerId) {
+
     let items = [];
 
-    document.querySelectorAll(`#${containerId} .dynamic-row`).forEach(row => {
+    let selectorFila = '.dynamic-row';
 
-        let n = row.querySelector('.name').value.trim();
-        let v = row.querySelector('.desc').value.trim();
+    if (containerId === 'container-materiales') {
+        selectorFila = '.material-row';
+    }
 
-        const estado = row.querySelector('.estado-equipo')
-            ? row.querySelector('.estado-equipo').value
-            : '';
 
-        n = n.replace(/:+$/, '');
+    document
+        .querySelectorAll(`#${containerId} ${selectorFila}`)
+        .forEach(row => {
 
-        if (containerId === 'container-quedan') {
+            let n =
+                row.querySelector('.name')
+                    ? row.querySelector('.name').value.trim()
+                    : '';
 
-            if (n && v) {
-                items.push(`• *${n}:* ${v} (${estado})`);
+            let v =
+                row.querySelector('.desc')
+                    ? row.querySelector('.desc').value.trim()
+                    : '';
+
+
+            const estado =
+                row.querySelector('.estado-equipo')
+                    ? row.querySelector('.estado-equipo').value
+                    : '';
+
+
+            n = n.replace(/:+$/, '');
+
+
+            // ======================================
+            // EQUIPOS QUE QUEDAN
+            // ======================================
+
+            if (containerId === 'container-quedan') {
+
+                if (n && v) {
+
+                    items.push(
+                        `• *${n}:* ${v} (${estado})`
+                    );
+
+                }
+
+                else if (n) {
+
+                    items.push(
+                        `• ${n} (${estado})`
+                    );
+
+                }
+
             }
-            else if (n) {
-                items.push(`• ${n} (${estado})`);
+
+            // ======================================
+            // SALIENTES Y MATERIALES
+            // ======================================
+
+            else {
+
+                if (n && v) {
+
+                    items.push(
+                        `• *${n}:* ${v}`
+                    );
+
+                }
+
+                else if (n) {
+
+                    items.push(
+                        `• ${n}`
+                    );
+
+                }
+
             }
 
-        } else {
+        });
 
-            if (n && v) {
-                items.push(`• *${n}:* ${v}`);
-            }
-            else if (n) {
-                items.push(`• ${n}`);
-            }
-        }
-    });
 
     return items.join('\n');
 }
-
 
         function calc() {
             let f = Math.abs((document.getElementById('fIni').value||0) - (document.getElementById('fFin').value||0));
@@ -777,6 +1532,36 @@ function guardarOffline(datos) {
     return true;
 }
 
+// =====================================================
+// ID ÚNICO DE LA NOTA PARA INVENTARIO
+// =====================================================
+
+function obtenerRegistroIdNota() {
+
+    let registroId =
+        localStorage.getItem(
+            "registroIdNotaActual"
+        );
+
+    if (!registroId) {
+
+        registroId =
+            "NOTA-" +
+            Date.now() +
+            "-" +
+            Math.floor(
+                Math.random() * 100000
+            );
+
+        localStorage.setItem(
+            "registroIdNotaActual",
+            registroId
+        );
+    }
+
+    return registroId;
+}
+//
         function generar(tipo) {
             if (!validarCamposObligatorios()) return;
             let d = {
@@ -893,12 +1678,38 @@ function guardarOffline(datos) {
                 enviarAGoogleSheets();
 
                 enviarMaterialesOricue10({
-                fecha: new Date().toLocaleString(),
-                tec: d.tec,
-                cto: d.cto,
-                cliente: d.cli,
-                materiales: l_mat
-                });
+
+    fecha:
+        new Date().toLocaleString(),
+
+    tec:
+        d.tec,
+
+    numTarea: 
+    d.ntr,
+
+    registroId: 
+    obtenerRegistroIdNota(),
+
+    cto:
+        d.cto,
+
+    cliente:
+        d.cli,
+
+    materiales:
+        l_mat,
+
+    fibraTotal:
+        d.ftot,
+
+    utpTotal:
+        d.utot,
+
+    rg6Total:
+        d.rtot
+
+});
 
             } 
             else if(tipo === 3) { // OBS
