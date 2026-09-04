@@ -423,6 +423,11 @@ BOTONES FLOTANTES
                 "✅ Registro principal enviado"
             );
 
+            // Los equipos que quedaron instalados pasan de Stock a Entregado.
+            await marcarEquiposInstaladosComoEntregados(
+                d.codigosEquiposInstalados || []
+            );
+
 
             // ==========================================
             // 2. SI ES ORICUE-10,
@@ -545,6 +550,7 @@ BOTONES FLOTANTES
         ssid: document.getElementById('ssid').value,
         pass: document.getElementById('pass').value,
 
+        codigosEquiposInstalados: obtenerCodigosEquiposInstalados(),
         equiposQuedan: readDynamic('container-quedan'),
         equiposRetiran: readDynamic('container-salientes'),
         materiales: readDynamic('container-materiales')
@@ -554,6 +560,7 @@ BOTONES FLOTANTES
         const GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbzOASlbv-kxIv2Ko6Jbu3hJ9MigM7JrMUQ4WUElJL7Vu8wLkxoCQKb-a-mUHE_ofC5Cnw/exec";
         const MATERIAL_ORICUE10_URL = "https://script.google.com/macros/s/AKfycbzhcISUQKYWhJbZ4Mk34kogDifccir-gxKxkpWlUT-5kclrIWuEznFxEfMQPmXTv0M/exec";
         const INVENTARIO_ORICUE10_URL = "https://script.google.com/macros/s/AKfycbxIKlHure5mzwgRrBDAHSKS69_1kd_mLpaKYwirYQ7Y8cJvJECje5b24H6I3SKZuYe0/exec";
+        const EQUIPOS_API_URL = "https://control-registro-equipos-api.xiorigintel14.workers.dev";
 
       function enviarMaterialesOricue10(datos) {
 
@@ -718,12 +725,100 @@ function agregarCableMaterial(
         mode: "no-cors",
         body: JSON.stringify(datos)
     })
-    .then(() => {
-        alert("✅ Datos enviados correctamente");
+    .then(async () => {
+        const resultadoEquipos =
+            await marcarEquiposInstaladosComoEntregados(
+                datos.codigosEquiposInstalados
+            );
+
+        let mensaje = "✅ Datos enviados correctamente";
+        if (resultadoEquipos.total > 0) {
+            mensaje +=
+                `\n📦 ${resultadoEquipos.entregados} de ${resultadoEquipos.total} equipo(s) marcado(s) como Entregado`;
+        }
+        if (resultadoEquipos.errores.length > 0) {
+            mensaje += "\n⚠️ " + resultadoEquipos.errores.join("\n⚠️ ");
+        }
+        alert(mensaje);
     })
     .catch(() => {
         guardarOffline(datos);
     });
+}
+
+// =====================================================
+// UNIFICACIÓN CON CONTROL REGISTRO DE EQUIPOS
+// =====================================================
+
+function obtenerCodigosEquiposInstalados() {
+    const codigos = [];
+
+    document.querySelectorAll(
+        '#container-quedan .dynamic-row'
+    ).forEach(fila => {
+        const campoTipo = fila.querySelector('.name');
+        const campoCodigo = fila.querySelector('.desc');
+        const codigo = String(campoCodigo?.value || '')
+            .trim()
+            .replace(/\s+/g, '')
+            .toUpperCase();
+
+        // Todo código escrito en QUEDAN INSTALADOS se compara con el Stock.
+        if (!codigo) return;
+
+        codigos.push({
+            codigo,
+            tipo: String(campoTipo?.value || '').trim()
+        });
+    });
+
+    // Evita enviar dos veces el mismo equipo.
+    return codigos.filter((equipo, indice, lista) =>
+        lista.findIndex(item => item.codigo === equipo.codigo) === indice
+    );
+}
+
+async function marcarEquiposInstaladosComoEntregados(equipos) {
+    const lista = Array.isArray(equipos) ? equipos : [];
+    const resultado = {
+        total: lista.length,
+        entregados: 0,
+        errores: []
+    };
+
+    for (const equipo of lista) {
+        try {
+            const response = await fetch(
+                EQUIPOS_API_URL + '/api/movements',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        movement: 'Entregado',
+                        code: equipo.codigo,
+                        type: equipo.tipo
+                    })
+                }
+            );
+
+            const datos = await response.json();
+            if (!response.ok || !datos.ok) {
+                throw new Error(
+                    datos.error || 'No se pudo actualizar el equipo'
+                );
+            }
+
+            resultado.entregados++;
+        } catch (error) {
+            resultado.errores.push(
+                `${equipo.codigo}: ${error.message || 'error de conexión'}`
+            );
+        }
+    }
+
+    return resultado;
 }
 
 function guardarOffline(datos) {
@@ -774,9 +869,15 @@ function saveDynamicSection(containerId) {
                     ? row.querySelector('.desc').value
                     : '';
 
+            const estado =
+                row.querySelector('.estado-equipo')
+                    ? row.querySelector('.estado-equipo').value
+                    : '';
+
             data.push({
                 name: name,
-                desc: desc
+                desc: desc,
+                estado: estado
             });
 
         });
@@ -854,6 +955,14 @@ function loadDynamicSection(containerId) {
                 item.name,
                 item.desc
             );
+
+            const ultimaFila =
+                document.getElementById(containerId).lastElementChild;
+            const selectorEstado =
+                ultimaFila && ultimaFila.querySelector('.estado-equipo');
+            if (selectorEstado && item.estado) {
+                selectorEstado.value = item.estado;
+            }
 
         }
 
