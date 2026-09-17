@@ -517,6 +517,7 @@ BOTONES FLOTANTES
        function obtenerDatosFormulario() {
     return {
         fecha: new Date().toLocaleString(),
+        registroId: obtenerRegistroIdNota(),
 
         tipoNota: document.getElementById('tipoNota').value,
         numTarea: document.getElementById('numTarea').value,
