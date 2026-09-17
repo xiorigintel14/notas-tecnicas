@@ -1,6 +1,5 @@
-const CACHE_NAME = "notas-cache-v5";
+const CACHE_NAME = "notas-cache-v6";
 
-// Archivos esenciales
 const STATIC_FILES = [
   "./",
   "./index.html",
@@ -13,16 +12,14 @@ const STATIC_FILES = [
 // INSTALACIÓN
 // ===============================
 self.addEventListener("install", event => {
-
   console.log("✅ Service Worker instalado");
 
   self.skipWaiting();
 
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        return cache.addAll(STATIC_FILES);
-      })
+    caches
+      .open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_FILES))
   );
 });
 
@@ -30,98 +27,88 @@ self.addEventListener("install", event => {
 // ACTIVACIÓN
 // ===============================
 self.addEventListener("activate", event => {
-
   console.log("✅ Service Worker activado");
 
   event.waitUntil(
-
-    caches.keys().then(keys => {
-
-      return Promise.all(
-
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => {
-            console.log("🗑️ Eliminando cache viejo:", key);
-            return caches.delete(key);
-          })
-
-      );
-
-    }).then(() => self.clients.claim())
-
+    caches
+      .keys()
+      .then(keys => {
+        return Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME)
+            .map(key => {
+              console.log("🗑️ Eliminando caché anterior:", key);
+              return caches.delete(key);
+            })
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
 // ===============================
-// FETCH
+// SOLICITUDES
 // ===============================
 self.addEventListener("fetch", event => {
+  const request = event.request;
 
-  const req = event.request;
-
-  // ❌ Ignorar métodos distintos a GET
-  if (req.method !== "GET") return;
-
-  // ❌ Ignorar Google Sheets
-  if (
-    req.url.includes("script.google.com") ||
-    req.url.includes("googleapis.com")
-  ) {
+  // Solo procesar solicitudes GET
+  if (request.method !== "GET") {
     return;
   }
 
-  // ❌ Ignorar extensiones Chrome
+  // No interceptar servicios externos
   if (
-    req.url.startsWith("chrome-extension://")
+    request.url.includes("script.google.com") ||
+    request.url.includes("googleapis.com") ||
+    request.url.startsWith("chrome-extension://")
   ) {
     return;
   }
 
   event.respondWith(
+    caches.match(request).then(cachedResponse => {
+      // Actualizar la caché en segundo plano
+      const networkResponse = fetch(request)
+        .then(response => {
+          if (
+            response &&
+            response.status === 200 &&
+            response.type === "basic"
+          ) {
+            const copy = response.clone();
 
-    fetch(req)
+            caches.open(CACHE_NAME).then(cache => {
+              cache.put(request, copy);
+            });
+          }
 
-      .then(networkRes => {
+          return response;
+        })
+        .catch(() => null);
 
-        // Evitar guardar respuestas inválidas
-        if (
-          !networkRes ||
-          networkRes.status !== 200 ||
-          networkRes.type !== "basic"
-        ) {
-          return networkRes;
+      // Mostrar inmediatamente lo almacenado
+      if (cachedResponse) {
+        event.waitUntil(networkResponse);
+        return cachedResponse;
+      }
+
+      // Si no existe en caché, intentar Internet
+      return networkResponse.then(response => {
+        if (response) {
+          return response;
         }
 
-        const responseClone = networkRes.clone();
+        // Respaldo para navegación sin conexión
+        if (request.mode === "navigate") {
+          return caches.match("./index.html");
+        }
 
-        caches.open(CACHE_NAME)
-          .then(cache => {
-            cache.put(req, responseClone);
-          });
-
-        return networkRes;
-      })
-
-      .catch(() => {
-
-        return caches.match(req)
-          .then(cacheRes => {
-
-            // Si existe en cache
-            if (cacheRes) {
-              return cacheRes;
-            }
-
-            // Fallback offline
-            if (req.mode === "navigate") {
-              return caches.match("./index.html");
-            }
-
-          });
-
-      })
-
+        return new Response("Sin conexión", {
+          status: 503,
+          statusText: "Offline"
+        });
+      });
+    })
   );
-
 });
