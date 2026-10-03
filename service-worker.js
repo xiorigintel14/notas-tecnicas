@@ -1,4 +1,4 @@
-const CACHE_NAME = "notas-cache-v6";
+const CACHE_NAME = "notas-cache-v7";
 
 const STATIC_FILES = [
   "./",
